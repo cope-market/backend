@@ -82,10 +82,23 @@ describe("request construction", () => {
     expect(fetchMock.mock.calls[0]![1].headers.authorization).toBe("Bearer tok_123");
   });
 
-  /// Sending a credential to a public endpoint leaks it wider than it needs to go.
-  it("sends no token on public routes", async () => {
+  /// Public routes personalise when they can: the feed's following tab and every viewerHasLiked
+  /// flag depend on the server knowing who is asking. A route's auth mode says whether the server
+  /// REQUIRES a caller to be signed in, not whether the client should identify itself.
+  it("sends the token on public routes too, when one is available", async () => {
     fetchMock.mockResolvedValue(jsonResponse({assets: []}));
     await client().listAssets({});
+    expect(fetchMock.mock.calls[0]![1].headers.authorization).toBe("Bearer tok_123");
+  });
+
+  it("sends no token on a public route when nobody is signed in", async () => {
+    const anonymous = createApiClient({
+      baseUrl: "https://api.test/api/v1",
+      fetch: fetchMock as unknown as typeof fetch,
+      getAccessToken: async () => null,
+    });
+    fetchMock.mockResolvedValue(jsonResponse({assets: []}));
+    await anonymous.listAssets({});
     expect(fetchMock.mock.calls[0]![1].headers.authorization).toBeUndefined();
   });
 

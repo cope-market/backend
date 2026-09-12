@@ -20,7 +20,8 @@
     "db:down": "docker compose down",
     "migrate": "tsx scripts/migrate.ts",
     "verify:live": "tsx scripts/verify-live.ts",
-    "verify:trade": "tsx scripts/verify-trade.ts"
+    "verify:trade": "tsx scripts/verify-trade.ts",
+    "verify:social": "tsx scripts/verify-social.ts"
   },
   "dependencies": {
     "jose": "^6.2.12",

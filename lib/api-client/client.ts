@@ -93,16 +93,20 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
   const call = async (route: RouteDefinition, input: Record<string, unknown>) => {
     const headers: Record<string, string> = {};
 
-    if (route.auth === "required") {
-      const token = (await options.getAccessToken?.()) ?? null;
-      if (!token) {
-        throw new ApiRequestError(
-          "UNAUTHORIZED",
-          `${route.operationId} needs authentication and no access token is available.`,
-          401,
-        );
-      }
-      headers["authorization"] = `Bearer ${token}`;
+    // The token is sent whenever one is available, not only on routes that demand it. A route's
+    // auth mode says whether the SERVER requires a caller to be signed in, not whether the client
+    // should identify itself: public routes personalise their responses when they can, and without
+    // the token the feed's following tab is empty and every thesis reports viewerHasLiked as null.
+    // This is our own API on our own origin, so offering the credential is not leaking it.
+    const token = (await options.getAccessToken?.()) ?? null;
+    if (token) headers["authorization"] = `Bearer ${token}`;
+
+    if (route.auth === "required" && !token) {
+      throw new ApiRequestError(
+        "UNAUTHORIZED",
+        `${route.operationId} needs authentication and no access token is available.`,
+        401,
+      );
     }
 
     const path = buildPath(route, (input["params"] as Record<string, string>) ?? {});
