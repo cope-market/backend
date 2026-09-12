@@ -6,6 +6,7 @@ import {chainAdapter} from "@/lib/chain/adapter";
 import {getPool} from "@/lib/db/pool";
 import {findTrade, markConfirmed, markFailed, markSubmitted} from "@/lib/db/trades";
 import {settleFromReceipt} from "@/lib/trading/service";
+import {attachPosition} from "@/lib/social/theses";
 
 export const POST = defineHandler(routes.confirmTrade, async ({user, params, body}) => {
   const pool = getPool();
@@ -27,7 +28,14 @@ export const POST = defineHandler(routes.confirmTrade, async ({user, params, bod
       wallet: user.walletAddress as Address,
       action: trade.action,
     });
-    return {trade: toWireTrade((await markConfirmed(pool, trade.id, settled.tokenId))!)};
+    const confirmed = (await markConfirmed(pool, trade.id, settled.tokenId))!;
+
+    // The thesis was written before the signature. This is where the position catches up with it.
+    if (trade.action === "open" && trade.thesisId && settled.tokenId !== null) {
+      await attachPosition(pool, trade.thesisId, settled.tokenId);
+    }
+
+    return {trade: toWireTrade(confirmed)};
   } catch (error) {
     // A revert or a mismatch is recorded rather than left pending, so the client stops polling and
     // the user sees why.

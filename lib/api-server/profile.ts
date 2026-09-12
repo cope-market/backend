@@ -1,6 +1,8 @@
+import type {Pool} from "pg";
 import type {z} from "zod";
 import type {Profile, PublicProfile} from "../api-schema/entities";
 import type {User} from "../db/users";
+import {isFollowing, userStats} from "../social/graph";
 
 /// Maps a stored user onto the wire shape.
 ///
@@ -16,6 +18,30 @@ const EMPTY_STATS = {
   following: 0,
   copiesReceived: 0,
 };
+
+/// Reads the counts from the database. Realised P&L stays "0" until the subgraph lands; it is the
+/// one number this service cannot derive, and inventing it would be worse than admitting it.
+export async function toProfileWithStats(pool: Pool, user: User): Promise<z.infer<typeof Profile>> {
+  return {...toProfile(user), stats: await userStats(pool, user.id)};
+}
+
+export async function toPublicProfileWithStats(
+  pool: Pool,
+  user: User,
+  viewer: User | null,
+): Promise<z.infer<typeof PublicProfile>> {
+  const [profile, following] = await Promise.all([
+    toProfileWithStats(pool, user),
+    viewer && viewer.id !== user.id
+      ? isFollowing(pool, viewer.id, user.id)
+      : Promise.resolve(false),
+  ]);
+  return {
+    ...profile,
+    // Null when nobody is signed in: "not following" and "unknown" are different states.
+    viewer: viewer ? {isFollowing: following, isSelf: viewer.id === user.id} : null,
+  };
+}
 
 export function toProfile(user: User): z.infer<typeof Profile> {
   return {
