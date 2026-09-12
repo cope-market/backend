@@ -63,7 +63,13 @@ const inputs: Record<RouteName, Record<string, unknown>> = {
   getFeed: {query: {tab: "latest", limit: 20}},
   getLeaderboard: {query: {window: "7d"}},
   createTradeIntent: {
-    body: {feedId: FEED, isLong: true, collateral: "2000000", thesisId: null, copiedFromTokenId: null},
+    body: {
+      feedId: FEED,
+      isLong: true,
+      collateral: "2000000",
+      thesisId: null,
+      copiedFromTokenId: null,
+    },
   },
   createCloseIntent: {params: {tokenId: "1"}, body: {}},
   confirmTrade: {params: {tradeId: UUID}, body: {txHash: TX}},
