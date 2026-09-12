@@ -198,3 +198,66 @@ is refused rather than re-priced silently.
 
 Social content, feed ranking and the subgraph. A trade can reference a thesis id, but creating
 theses is workstream 4.
+
+---
+
+# Workstream 4: Social layer
+
+Theses, tweet embeds, likes, comments, follows, the ranked feed and the leaderboard. This is the
+part of the product that is not a trade: the reason somebody opens the app rather than a DEX.
+
+---
+
+## What this has to get right
+
+**A thesis and its position are linked but separate.** The thesis is written before the trade is
+confirmed — a user types their take, then signs. The position attaches when the trade confirms, and
+until then the thesis simply has no `tokenId`. A design that required them together would mean
+either holding a draft hostage to a signature or writing a row for a trade that never happened.
+
+**Live P&L is never copied into the database.** A thesis carries a `tokenId` and the client reads
+the position from the chain. Mirroring it would create a second source of truth that is wrong
+between refreshes.
+
+**Ranking runs in SQL, not in the application.** Sorting a feed by fetching every row and scoring it
+in TypeScript stops working at the first thousand rows, and cursor pagination over an
+application-sorted list cannot be made stable.
+
+---
+
+## Decisions
+
+**Tweet embeds are cached server-side.** X's oEmbed endpoint has no CORS headers, so a browser
+cannot call it, and it rate-limits, so calling it per page view would not survive a demo. One row
+per tweet URL, fetched once.
+
+**The ranking formula runs without P&L for now.** The intended score weights realised performance,
+and that number comes from the subgraph, which is workstream 5. Ranking today uses likes, comments,
+copies and age. The formula is written so the P&L term slots in without reshaping the query.
+
+**The leaderboard ranks on what can actually be measured today** — copies received and positions
+closed. Realised P&L joins when the subgraph does. A leaderboard showing zeros for its headline
+column would be worse than one honest about what it is sorting on.
+
+**Counters are denormalised and maintained in the same transaction as the action.** A feed query
+that counts likes per thesis on every read is the query that gets slow first.
+
+---
+
+## Steps
+
+| #       | Step               | Done when                                                                                                                    |
+| ------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| **4.1** | Social schema      | events, theses, likes, comments and follows, with the counters the feed reads                                                |
+| **4.2** | Tweet embeds       | X oEmbed fetched once per URL and cached; a bad or private tweet fails with its own error                                    |
+| **4.3** | Theses             | Create and read, with the position attaching when a trade confirms                                                           |
+| **4.4** | Likes and comments | Idempotent likes, paginated comments, counters that stay correct under repeat calls                                          |
+| **4.5** | Follows and stats  | Follow and unfollow, and profile stats that stop being zeros                                                                 |
+| **4.6** | Feed               | latest, top and following, ranked in SQL with stable cursor pagination                                                       |
+| **4.7** | Leaderboard        | Ranked on measurable columns, over the three windows                                                                         |
+| **4.8** | Verification       | The full loop against a real database: post a thesis with a real trade, have a second user copy it, and see both in the feed |
+
+## Out of scope
+
+The subgraph, and therefore realised P&L anywhere it would appear. Notifications and devices have
+routes and fixtures already; delivery is not being built.
