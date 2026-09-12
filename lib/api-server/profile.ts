@@ -19,10 +19,10 @@ const EMPTY_STATS = {
   copiesReceived: 0,
 };
 
-/// Reads the counts from the database. Realised P&L stays "0" until the subgraph lands; it is the
-/// one number this service cannot derive, and inventing it would be worse than admitting it.
+/// Follows and copies come from the database; positions and realised P&L come from the subgraph,
+/// keyed on the user's wallet address.
 export async function toProfileWithStats(pool: Pool, user: User): Promise<z.infer<typeof Profile>> {
-  return {...toProfile(user), stats: await userStats(pool, user.id)};
+  return {...toProfile(user), stats: await userStats(pool, user.id, user.walletAddress)};
 }
 
 export async function toPublicProfileWithStats(

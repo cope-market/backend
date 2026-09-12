@@ -1,4 +1,8 @@
 import type {Pool} from "pg";
+import {SubgraphError} from "../subgraph/client";
+import type {SubgraphClient} from "../subgraph/client";
+import {getSubgraphClient} from "../subgraph/client";
+import {EMPTY_TOTALS, traderTotals} from "../subgraph/traders";
 
 /// The follow graph, and the stats that depend on it.
 
@@ -47,13 +51,21 @@ export interface UserStats {
   copiesReceived: number;
 }
 
-/// Everything here is measured from our own tables.
+/// Follows and copies come from our tables; positions and P&L come from the subgraph.
 ///
-/// Position counts come from confirmed trades rather than from the chain, because counting a user's
-/// positions on-chain means enumerating token ownership on every profile view. realizedPnlUsd stays
-/// "0" until the subgraph lands: it is the one number this service cannot derive, and inventing it
-/// would be worse than admitting it.
-export async function userStats(pool: Pool, userId: string): Promise<UserStats> {
+/// The split is not arbitrary. A follow exists only here. A position exists on chain whether or not
+/// this service saw it opened, so counting confirmed trades undercounts anyone who went straight to
+/// the contract.
+///
+/// If the subgraph is unreachable the profile still renders, with the figures this service can
+/// derive on its own and a zero where the P&L would be. A profile is worth showing without its P&L;
+/// it is not worth a 500. The leaderboard makes the opposite choice, deliberately — see below.
+export async function userStats(
+  pool: Pool,
+  userId: string,
+  walletAddress: string,
+  subgraph: SubgraphClient = getSubgraphClient(),
+): Promise<UserStats> {
   const {rows} = await pool.query<{
     followers: string;
     following: string;
@@ -73,18 +85,46 @@ export async function userStats(pool: Pool, userId: string): Promise<UserStats> 
   );
 
   const row = rows[0]!;
+  const social = {
+    followers: Number(row.followers),
+    following: Number(row.following),
+    copiesReceived: Number(row.copies_received),
+  };
+
+  let totals = EMPTY_TOTALS;
+  let onChain = true;
+  try {
+    totals =
+      (await traderTotals(subgraph, [walletAddress])).get(walletAddress.toLowerCase()) ??
+      EMPTY_TOTALS;
+  } catch (error) {
+    // A configuration mistake is not a degraded dependency, and hiding it behind zeros would mean
+    // nobody noticed until a judge asked why every profile reads 0.
+    if (!(error instanceof SubgraphError)) throw error;
+    console.warn(
+      `[userStats] subgraph unavailable, falling back to trade counts: ${error.message}`,
+    );
+    onChain = false;
+  }
+
+  if (onChain) {
+    return {
+      openPositions: totals.openPositions,
+      closedPositions: totals.closedPositions,
+      realizedPnlUsd: totals.realizedPnlWad,
+      ...social,
+    };
+  }
+
   const opens = Number(row.opens);
   const closes = Number(row.closes);
-
   return {
     // A position is open until it has been closed. Clamped, because a close confirmed against a
     // position opened before this service existed would otherwise show a negative count.
     openPositions: Math.max(opens - closes, 0),
     closedPositions: closes,
     realizedPnlUsd: "0",
-    followers: Number(row.followers),
-    following: Number(row.following),
-    copiesReceived: Number(row.copies_received),
+    ...social,
   };
 }
 

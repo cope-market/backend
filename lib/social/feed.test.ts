@@ -4,6 +4,7 @@ import {upsertUser} from "../db/users";
 import {createThesis, likeThesis} from "./theses";
 import {decodeFeedCursor, getFeed} from "./feed";
 import {followUser, isFollowing, leaderboard, unfollowUser, userStats} from "./graph";
+import {brokenSubgraph, stubSubgraph} from "../subgraph/testing";
 
 let db: TestDatabase;
 let alice: string;
@@ -11,6 +12,24 @@ let bob: string;
 let carol: string;
 
 const FEED = "0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43";
+
+const BOB_WALLET = "0x2222222222222222222222222222222222222222";
+
+/// A subgraph that has never heard of anybody. Most of these tests are about the follow graph, and
+/// the on-chain half should contribute nothing to them.
+const NO_TRADES = stubSubgraph({traders: {traders: []}, positions: {positions: []}});
+
+const traderRow = (id: string, overrides: Record<string, unknown> = {}) => ({
+  id,
+  positionsOpened: 0,
+  positionsClosed: 0,
+  realizedPnlWad: "0",
+  wins: 0,
+  losses: 0,
+  copiesReceived: 0,
+  authorFeesEarned: "0",
+  ...overrides,
+});
 
 const makeUser = async (name: string, wallet: string) =>
   (
@@ -53,7 +72,7 @@ describe("follows", () => {
   it("is idempotent", async () => {
     await followUser(db.pool, alice, bob);
     await followUser(db.pool, alice, bob);
-    expect((await userStats(db.pool, bob)).followers).toBe(1);
+    expect((await userStats(db.pool, bob, BOB_WALLET, NO_TRADES)).followers).toBe(1);
   });
 
   /// Following yourself would inflate your own follower count and put your posts in your own feed.
@@ -66,7 +85,7 @@ describe("follows", () => {
 describe("userStats", () => {
   it("counts followers and following from the graph", async () => {
     await followUser(db.pool, carol, bob);
-    const stats = await userStats(db.pool, bob);
+    const stats = await userStats(db.pool, bob, BOB_WALLET, NO_TRADES);
     expect(stats.followers).toBe(2);
     expect(stats.following).toBe(0);
   });
@@ -82,12 +101,43 @@ describe("userStats", () => {
       body: "",
       copiedFromThesisId: original.id,
     });
-    expect((await userStats(db.pool, bob)).copiesReceived).toBe(1);
+    expect((await userStats(db.pool, bob, BOB_WALLET, NO_TRADES)).copiesReceived).toBe(1);
   });
 
-  /// The one number this service cannot derive. Reported as zero rather than invented.
-  it("reports realised P&L as zero until the subgraph exists", async () => {
-    expect((await userStats(db.pool, bob)).realizedPnlUsd).toBe("0");
+  /// An address the subgraph has never seen has no row at all, which means it has never traded.
+  it("reports zeros for a user who has never traded", async () => {
+    const stats = await userStats(db.pool, bob, BOB_WALLET, NO_TRADES);
+    expect(stats.realizedPnlUsd).toBe("0");
+    expect(stats.openPositions).toBe(0);
+    expect(stats.closedPositions).toBe(0);
+  });
+
+  it("reads realised P&L and position counts from the subgraph", async () => {
+    const subgraph = stubSubgraph({
+      traders: {
+        traders: [
+          traderRow(BOB_WALLET, {
+            positionsOpened: 7,
+            positionsClosed: 4,
+            realizedPnlWad: "412500000000000000000",
+          }),
+        ],
+      },
+    });
+    const stats = await userStats(db.pool, bob, BOB_WALLET, subgraph);
+
+    expect(stats.realizedPnlUsd).toBe("412500000000000000000");
+    expect(stats.openPositions).toBe(3);
+    expect(stats.closedPositions).toBe(4);
+  });
+
+  /// A profile is worth showing without its P&L figure. It is not worth a 500, so the follow counts
+  /// still come back and the P&L reads zero. The leaderboard makes the opposite choice.
+  it("still renders the social half when the subgraph is down", async () => {
+    const stats = await userStats(db.pool, bob, BOB_WALLET, brokenSubgraph());
+
+    expect(stats.followers).toBe(2);
+    expect(stats.realizedPnlUsd).toBe("0");
   });
 });
 

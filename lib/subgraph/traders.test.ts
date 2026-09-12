@@ -2,7 +2,9 @@ import {describe, expect, it} from "vitest";
 import type {SubgraphClient} from "./client";
 import {EMPTY_TOTALS, normaliseAddress, traderTotals, windowedTotals, winRateOf} from "./traders";
 
-const ALICE = "0x1111111111111111111111111111111111111111";
+const ALICE = "0xeeb3e0999d01f0d1ed465513e414725a357f6ae4";
+/// The same address as the chain checksums it. Only useful because it actually contains letters.
+const ALICE_CHECKSUMMED = "0xeeb3e0999D01f0d1Ed465513E414725a357F6ae4";
 const BOB = "0x2222222222222222222222222222222222222222";
 const WAD = 10n ** 18n;
 
@@ -63,13 +65,11 @@ describe("lifetime totals", () => {
   /// would miss every row it just fetched.
   it("matches a checksummed address to a lower-case answer", async () => {
     const {client, calls} = fakeClient([{traders: [traderRow(ALICE)]}]);
-    const checksummed = "0x1111111111111111111111111111111111111111"
-      .toUpperCase()
-      .replace("0X", "0x");
-    const totals = await traderTotals(client, [checksummed]);
+    const totals = await traderTotals(client, [ALICE_CHECKSUMMED]);
 
+    expect(ALICE_CHECKSUMMED).not.toBe(ALICE);
     expect(calls[0]!.variables.ids).toEqual([ALICE]);
-    expect(totals.get(normaliseAddress(checksummed))).toBeDefined();
+    expect(totals.get(normaliseAddress(ALICE_CHECKSUMMED))).toBeDefined();
   });
 
   /// An address that never traded has no row at all. Absent means nothing happened, which is not
@@ -90,7 +90,7 @@ describe("lifetime totals", () => {
 
   it("de-duplicates addresses before asking", async () => {
     const {client, calls} = fakeClient([{traders: [traderRow(ALICE)]}]);
-    await traderTotals(client, [ALICE, ALICE, ALICE.toUpperCase().replace("0X", "0x")]);
+    await traderTotals(client, [ALICE, ALICE, ALICE_CHECKSUMMED]);
     expect(calls[0]!.variables.ids).toEqual([ALICE]);
   });
 
