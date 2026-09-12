@@ -21,6 +21,7 @@
     "migrate": "tsx scripts/migrate.ts"
   },
   "dependencies": {
+    "jose": "^6.2.12",
     "next": "^15.5.25",
     "pg": "^8.23.0",
     "react": "^19.3.0",
