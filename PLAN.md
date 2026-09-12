@@ -66,3 +66,65 @@ These exist to make the generated Swift client clean and to stop the frontend gu
 
 No database, no chain calls, no Privy verification against the live service. The auth route is
 declared and mocked. It is wired up in workstream 2, once Alok supplies a Privy app ID.
+
+---
+
+# Workstream 2: Foundation — persistence, auth, and the handler layer
+
+Workstream 1 declared the API. This one makes a first slice of it real, and builds the machinery
+every later endpoint reuses: a database, verified identity, and a way to turn a route definition
+into a running handler.
+
+The endpoints delivered here are deliberately the boring ones. Configuration and profile are enough
+to prove the whole path end to end — request in, validated, authenticated, persisted, response out —
+without the extra risk of money moving. Trade flow comes next, on top of machinery that already
+works.
+
+---
+
+## Decisions this workstream is built on
+
+**Plain Postgres, not Supabase.** The price pusher already has to run continuously on a VPS, so the
+box exists either way. A long-lived Node process removes the connection-pooling problem that makes
+serverless Postgres awkward, and self-hosting sidesteps free-tier projects pausing after a week of
+inactivity — judges open a demo days after submission, and a paused database is a broken demo.
+
+**No ORM.** Typed SQL with a thin query layer. The schema is small and the queries are simple; an
+ORM would add a dependency, a build step and a layer of indirection to save very little.
+
+**Migrations are plain SQL files, applied in order and recorded.** Reproducible on a fresh box, and
+readable by anyone who knows SQL rather than anyone who knows a particular tool.
+
+**The database stores social content and intent records only.** Financial state lives on-chain. If
+Postgres is lost, every position, balance and copy relationship survives.
+
+**Privy tokens are verified locally against Privy's public key**, not by calling their API on every
+request. A network round trip per request is a latency cost and an availability dependency for
+something that is a signature check.
+
+---
+
+## Steps
+
+Each step ends with `npm run check` green, a commit and a push.
+
+| #       | Step                     | Done when                                                                                                                          |
+| ------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **2.1** | Postgres and migrations  | `docker compose up -d` gives a database; migrations apply and re-apply cleanly; a test proves the runner is idempotent             |
+| **2.2** | Query layer              | Typed access to the pool, transactions, and a test proving a failed transaction rolls back                                         |
+| **2.3** | Users schema and queries | `users` table with the Privy identity as its key; upsert on first sight; tests against real Postgres                               |
+| **2.4** | Privy token verification | A token is verified locally; expired, malformed and wrong-audience tokens are each rejected with their own error                   |
+| **2.5** | Handler layer            | `defineHandler(route, impl)` validates params, query and body, enforces auth, and maps thrown errors onto the declared error codes |
+| **2.6** | Configuration endpoints  | `GET chains` and `GET assets` serve real config, driven by environment rather than hard-coded                                      |
+| **2.7** | Profile endpoints        | `POST auth/session`, `GET me`, `PATCH me` against real Postgres                                                                    |
+| **2.8** | Verification             | Fresh clone, fresh database, migrations, full suite, and the typed client driven against the real server rather than the mock      |
+
+---
+
+## What this workstream does not do
+
+No trade flow, no social content, no subgraph, no price pusher. Those land on the machinery built
+here.
+
+The mock server stays. It is what the frontend uses for routes that are not yet real, and the
+contract tests keep both honest.
