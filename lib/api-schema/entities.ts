@@ -226,3 +226,29 @@ export const PaginationQuery = z.object({
   cursor: Cursor.optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
+
+/// Registering these gives them names in the generated OpenAPI document. Swift code generation
+/// produces far better types from named components than from repeated inline objects.
+const named = {
+  Asset,
+  ChainConfig,
+  UserSummary,
+  UserStats,
+  Profile,
+  PublicProfile,
+  ViewerRelation,
+  TweetEmbed,
+  Thesis,
+  Comment,
+  LeaderboardEntry,
+  TxRequest,
+  Quote,
+  TradeIntent,
+  Trade,
+  Notification,
+  Device,
+};
+
+for (const [id, schema] of Object.entries(named)) {
+  z.globalRegistry.add(schema, {id});
+}
