@@ -21,7 +21,8 @@
     "migrate": "tsx scripts/migrate.ts",
     "verify:live": "tsx scripts/verify-live.ts",
     "verify:trade": "tsx scripts/verify-trade.ts",
-    "verify:social": "tsx scripts/verify-social.ts"
+    "verify:social": "tsx scripts/verify-social.ts",
+    "verify:subgraph": "tsx scripts/verify-subgraph.ts"
   },
   "dependencies": {
     "jose": "^6.2.12",
