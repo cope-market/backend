@@ -152,3 +152,51 @@ describe("fetchPrivyProfile", () => {
     ).rejects.toThrow(/HTTP 401/);
   });
 });
+
+describe("test tokens", () => {
+  const withEnv = async (env: Record<string, string | undefined>, run: () => Promise<void>) => {
+    const previous = {...process.env};
+    Object.assign(process.env, env);
+    try {
+      await run();
+    } finally {
+      process.env = previous;
+    }
+  };
+
+  it("is accepted only when explicitly enabled outside production", async () => {
+    const {testTokenPrivyId} = await import("./privy");
+    await withEnv({NODE_ENV: "test", ALLOW_TEST_TOKENS: "1"}, async () => {
+      expect(testTokenPrivyId("test:did:privy:alice")).toBe("did:privy:alice");
+    });
+  });
+
+  /// Both conditions are required so the flag being set in the wrong place cannot open a hole.
+  it("is refused in production even when the flag is set", async () => {
+    const {testTokenPrivyId} = await import("./privy");
+    await withEnv({NODE_ENV: "production", ALLOW_TEST_TOKENS: "1"}, async () => {
+      expect(testTokenPrivyId("test:did:privy:alice")).toBeNull();
+    });
+  });
+
+  it("is refused when the flag is absent", async () => {
+    const {testTokenPrivyId} = await import("./privy");
+    await withEnv({NODE_ENV: "test", ALLOW_TEST_TOKENS: undefined}, async () => {
+      expect(testTokenPrivyId("test:did:privy:alice")).toBeNull();
+    });
+  });
+
+  it("ignores a normal token", async () => {
+    const {testTokenPrivyId} = await import("./privy");
+    await withEnv({NODE_ENV: "test", ALLOW_TEST_TOKENS: "1"}, async () => {
+      expect(testTokenPrivyId("eyJhbGciOiJFUzI1NiJ9.x.y")).toBeNull();
+    });
+  });
+
+  it("rejects an empty identity", async () => {
+    const {testTokenPrivyId} = await import("./privy");
+    await withEnv({NODE_ENV: "test", ALLOW_TEST_TOKENS: "1"}, async () => {
+      expect(testTokenPrivyId("test:")).toBeNull();
+    });
+  });
+});

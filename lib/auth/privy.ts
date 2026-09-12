@@ -46,11 +46,32 @@ async function remoteKeySet(appId: string) {
   return cachedKeys;
 }
 
+/// Escape hatch for automated verification against a real deployment, where no browser exists to
+/// mint a Privy token.
+///
+/// Requires BOTH a non-production NODE_ENV and ALLOW_TEST_TOKENS=1. Either alone is not enough, so
+/// the variable being set in the wrong place cannot open a hole, and neither can NODE_ENV being
+/// unset. It is refused in production regardless of the flag.
+export function testTokenPrivyId(token: string): string | null {
+  if (!token.startsWith("test:")) return null;
+  if (process.env["NODE_ENV"] === "production") return null;
+  if (process.env["ALLOW_TEST_TOKENS"] !== "1") return null;
+
+  const privyId = token.slice("test:".length);
+  return privyId.length > 0 ? privyId : null;
+}
+
 export async function verifyPrivyToken(
   token: string,
   options: VerifyOptions,
 ): Promise<PrivyClaims> {
   if (!token) throw new AuthError("No access token was supplied.");
+
+  const testPrivyId = testTokenPrivyId(token);
+  if (testPrivyId) {
+    console.warn(`ACCEPTING TEST TOKEN for ${testPrivyId}. This must never happen in production.`);
+    return {privyId: testPrivyId, sessionId: null, expiresAt: new Date(Date.now() + 60_000)};
+  }
 
   const key = options.getPublicKey
     ? ((await importJWK(await options.getPublicKey(), "ES256")) as KeyObject)
