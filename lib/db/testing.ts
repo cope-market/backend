@@ -1,5 +1,6 @@
 import {Pool} from "pg";
 import {randomUUID} from "node:crypto";
+import {applyMigrations, loadMigrations} from "./migrate";
 
 /// Each suite gets its own database, created and dropped around it. Tests that share a database
 /// pass or fail depending on what ran before them, which is a slower and more confusing way to find
@@ -21,6 +22,12 @@ export async function createTestDatabase(): Promise<TestDatabase> {
   const url = new URL(ADMIN_URL);
   url.pathname = `/${name}`;
   const pool = new Pool({connectionString: url.toString()});
+
+  // Migrated on creation, so a suite tests against the schema the application actually ships.
+  await applyMigrations(
+    pool,
+    loadMigrations(new URL("../../migrations", import.meta.url).pathname),
+  );
 
   return {
     pool,
