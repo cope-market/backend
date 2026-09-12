@@ -34,11 +34,14 @@ export function pathPlaceholders(path: string): string[] {
 
 /// Declares one route. The checks here run at module load, so a malformed route fails the build and
 /// the test suite rather than a request in production.
+/// The generics default to `undefined` rather than to their constraint. Without that, omitting
+/// `params` infers `ZodObject | undefined`, and a client derived from the route would demand a
+/// params argument for a route that has none.
 export function defineRoute<
-  TParams extends ZodObject | undefined,
-  TQuery extends ZodObject | undefined,
-  TBody extends ZodType | undefined,
   TResponse extends ZodType,
+  TParams extends ZodObject | undefined = undefined,
+  TQuery extends ZodObject | undefined = undefined,
+  TBody extends ZodType | undefined = undefined,
 >(
   definition: RouteDefinition<TParams, TQuery, TBody, TResponse>,
 ): RouteDefinition<TParams, TQuery, TBody, TResponse> {
