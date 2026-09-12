@@ -64,10 +64,10 @@ interface ThesisRow {
   viewer_has_liked: boolean | null;
 }
 
-/// One projection used by every read, so a thesis looks the same in the feed, on its own page and
-/// on a profile.
-export const THESIS_SELECT = `
-  select t.id, t.feed_id, t.stance, t.title, t.body, t.token_id, t.copied_from_thesis_id,
+/// The columns every read projects, so a thesis looks the same in the feed, on its own page and on
+/// a profile. Split from the select keyword so a caller can prepend a computed column.
+export const THESIS_COLUMNS = `
+         t.id, t.feed_id, t.stance, t.title, t.body, t.token_id, t.copied_from_thesis_id,
          t.like_count, t.comment_count, t.copy_count, t.created_at,
          u.id as author_id, u.x_handle, u.x_name, u.x_avatar_url, u.wallet_address,
          e.tweet_url, e.author_handle as event_author_handle, e.author_name as event_author_name,
@@ -75,9 +75,14 @@ export const THESIS_SELECT = `
          case when $1::uuid is null then null
               else exists (select 1 from likes l where l.thesis_id = t.id and l.user_id = $1::uuid)
          end as viewer_has_liked
+`;
+
+export const THESIS_FROM = `
   from theses t
   join users u on u.id = t.user_id
   left join events e on e.id = t.event_id`;
+
+export const THESIS_SELECT = `select ${THESIS_COLUMNS} ${THESIS_FROM}`;
 
 export function toThesis(row: ThesisRow): Thesis {
   return {
