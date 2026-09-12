@@ -18,7 +18,8 @@
     "mock": "tsx scripts/mock-server.ts",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
-    "migrate": "tsx scripts/migrate.ts"
+    "migrate": "tsx scripts/migrate.ts",
+    "verify:live": "tsx scripts/verify-live.ts"
   },
   "dependencies": {
     "jose": "^6.2.12",

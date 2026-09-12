@@ -88,6 +88,16 @@ describe("validation", () => {
     expect((await response.json()).error.code).toBe("VALIDATION");
   });
 
+  /// These messages reach users. A raw zod error dump is both unreadable and several hundred
+  /// characters of JSON inside a JSON string.
+  it("reports which field failed in a readable sentence", async () => {
+    const response = await call(handler, "http://t/api/v1/widgets/nope", {}, {widgetId: "nope"});
+    const {message} = (await response.json()).error;
+    expect(message).toContain("widgetId");
+    expect(message).not.toContain("{");
+    expect(message.length).toBeLessThan(200);
+  });
+
   it("rejects an out-of-range query parameter", async () => {
     const response = await call(
       handler,

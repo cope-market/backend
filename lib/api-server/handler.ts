@@ -64,6 +64,18 @@ function errorResponse(code: ErrorCode, message: string): Response {
   return Response.json({error: {code, message}}, {status: STATUS[code]});
 }
 
+/// Turns a zod error into one readable sentence naming the fields that failed. The raw error is
+/// hundreds of characters of nested JSON, and these messages reach users.
+function describeIssues(error: {issues: Array<{path: PropertyKey[]; message: string}>}): string {
+  return error.issues
+    .slice(0, 3)
+    .map((issue) => {
+      const field = issue.path.join(".");
+      return field ? `${field}: ${issue.message}` : issue.message;
+    })
+    .join("; ");
+}
+
 async function readBody(request: Request, schema: ZodType): Promise<unknown> {
   let raw: unknown;
   try {
@@ -74,7 +86,7 @@ async function readBody(request: Request, schema: ZodType): Promise<unknown> {
 
   const parsed = schema.safeParse(raw);
   if (!parsed.success) {
-    throw new ApiException("VALIDATION", `Request body is invalid: ${parsed.error.message}`);
+    throw new ApiException("VALIDATION", `Invalid request body. ${describeIssues(parsed.error)}`);
   }
   return parsed.data;
 }
@@ -82,7 +94,7 @@ async function readBody(request: Request, schema: ZodType): Promise<unknown> {
 function parseOrThrow(schema: ZodObject, value: unknown, what: string): unknown {
   const parsed = schema.safeParse(value);
   if (!parsed.success) {
-    throw new ApiException("VALIDATION", `Invalid ${what}: ${parsed.error.message}`);
+    throw new ApiException("VALIDATION", `Invalid ${what}. ${describeIssues(parsed.error)}`);
   }
   return parsed.data;
 }
