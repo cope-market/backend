@@ -35,16 +35,16 @@ drift, because there is nothing to keep in sync.
 
 Each step ends with tests passing, a commit and a push.
 
-| # | Step | Done when |
-|---|---|---|
-| **1.1** | Scaffold | Next.js App Router, TypeScript strict, vitest, lint and format all run clean on an empty project |
-| **1.2** | Route registry primitive | `defineRoute` exists and its types are proven by tests that fail to compile when misused |
-| **1.3** | Shared schemas | Address, Hex, FeedId, decimal-string amounts, cursor pagination and the error envelope, each with round-trip tests |
-| **1.4** | Route definitions | Every endpoint declared. Tests assert unique method+path, unique operationId, and auth marked explicitly |
-| **1.5** | OpenAPI generation | `public/openapi.json` is generated, valid 3.1, and CI fails when it is stale |
-| **1.6** | Typed client | `apiClient.get("feed", {...})` infers argument and return types from the registry |
-| **1.7** | Fixtures and mock server | `npm run mock` serves every route with realistic data and no database |
-| **1.8** | Verification | Full suite, spec lint, a curl against the running mock, and `INTEGRATION.md` updated |
+| #       | Step                     | Done when                                                                                                          |
+| ------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| **1.1** | Scaffold                 | Next.js App Router, TypeScript strict, vitest, lint and format all run clean on an empty project                   |
+| **1.2** | Route registry primitive | `defineRoute` exists and its types are proven by tests that fail to compile when misused                           |
+| **1.3** | Shared schemas           | Address, Hex, FeedId, decimal-string amounts, cursor pagination and the error envelope, each with round-trip tests |
+| **1.4** | Route definitions        | Every endpoint declared. Tests assert unique method+path, unique operationId, and auth marked explicitly           |
+| **1.5** | OpenAPI generation       | `public/openapi.json` is generated, valid 3.1, and CI fails when it is stale                                       |
+| **1.6** | Typed client             | `apiClient.get("feed", {...})` infers argument and return types from the registry                                  |
+| **1.7** | Fixtures and mock server | `npm run mock` serves every route with realistic data and no database                                              |
+| **1.8** | Verification             | Full suite, spec lint, a curl against the running mock, and `INTEGRATION.md` updated                               |
 
 ---
 
