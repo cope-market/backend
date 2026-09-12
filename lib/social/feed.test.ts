@@ -13,7 +13,9 @@ let carol: string;
 
 const FEED = "0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43";
 
+const ALICE_WALLET = "0x1111111111111111111111111111111111111111";
 const BOB_WALLET = "0x2222222222222222222222222222222222222222";
+const CAROL_WALLET = "0x3333333333333333333333333333333333333333";
 
 /// A subgraph that has never heard of anybody. Most of these tests are about the follow graph, and
 /// the on-chain half should contribute nothing to them.
@@ -231,22 +233,140 @@ describe("feed", () => {
 });
 
 describe("leaderboard", () => {
-  it("ranks by copies received", async () => {
-    const entries = await leaderboard(db.pool, "all");
-    expect(entries.length).toBeGreaterThan(0);
-    expect(entries[0]?.copiesReceived).toBeGreaterThanOrEqual(entries[1]?.copiesReceived ?? 0);
+  const WAD = 10n ** 18n;
+
+  const closed = (id: string, author: string, pnl: bigint) => ({
+    id,
+    author: {id: author},
+    realizedPnlWad: pnl.toString(),
   });
 
-  /// Sorting on a column that is zero for everybody would present an arbitrary order as a ranking.
-  it("reports P&L and win rate as zero rather than guessing them", async () => {
-    const [first] = await leaderboard(db.pool, "all");
-    expect(first?.realizedPnlUsd).toBe("0");
-    expect(first?.winRate).toBe(0);
+  /// The board's whole purpose. Whoever made the most money is first, whatever their follower count
+  /// or posting rate says.
+  it("ranks by realised P&L", async () => {
+    const subgraph = stubSubgraph({
+      positions: {
+        positions: [
+          closed("0x01", CAROL_WALLET, 5n * WAD),
+          closed("0x02", BOB_WALLET, 9n * WAD),
+          closed("0x03", ALICE_WALLET, -2n * WAD),
+        ],
+      },
+    });
+    const entries = await leaderboard(db.pool, "all", 25, subgraph);
+
+    // Other users exist in this database and have traded nothing, so they tie at zero between the
+    // winners and the loser. Only the relative order of the three that traded is asserted.
+    const order = entries.map((e) => e.walletAddress.toLowerCase());
+    expect(order.indexOf(BOB_WALLET)).toBeLessThan(order.indexOf(CAROL_WALLET));
+    expect(order.indexOf(CAROL_WALLET)).toBeLessThan(order.indexOf(ALICE_WALLET));
+    expect(entries[0]!.realizedPnlUsd).toBe((9n * WAD).toString());
+  });
+
+  /// A loss must rank below a trader who has done nothing, or the board rewards activity over
+  /// results.
+  it("puts a loss below someone who has never traded", async () => {
+    const subgraph = stubSubgraph({
+      positions: {positions: [closed("0x01", ALICE_WALLET, -2n * WAD)]},
+    });
+    const entries = await leaderboard(db.pool, "all", 25, subgraph);
+
+    expect(entries[entries.length - 1]!.walletAddress.toLowerCase()).toBe(ALICE_WALLET);
+  });
+
+  /// These are 1e18 figures, so a five-figure result is past 2^53. Sorted as numbers, the top of
+  /// the board would be ordered by rounding error.
+  it("orders figures larger than a JavaScript number can distinguish", async () => {
+    const big = 9_007_199_254_740_993n * WAD;
+    const bigger = big + WAD;
+    const subgraph = stubSubgraph({
+      positions: {
+        positions: [closed("0x01", ALICE_WALLET, big), closed("0x02", BOB_WALLET, bigger)],
+      },
+    });
+    const entries = await leaderboard(db.pool, "all", 25, subgraph);
+
+    expect(entries[0]!.realizedPnlUsd).toBe(bigger.toString());
+    expect(entries[1]!.realizedPnlUsd).toBe(big.toString());
+  });
+
+  it("reports a real win rate", async () => {
+    const subgraph = stubSubgraph({
+      positions: {
+        positions: [
+          closed("0x01", BOB_WALLET, 3n * WAD),
+          closed("0x02", BOB_WALLET, 1n * WAD),
+          closed("0x03", BOB_WALLET, -1n * WAD),
+          closed("0x04", BOB_WALLET, 0n),
+        ],
+      },
+    });
+    const [first] = await leaderboard(db.pool, "all", 25, subgraph);
+
+    expect(first!.closedPositions).toBe(4);
+    // Two wins out of four. The flat close counts against, not for.
+    expect(first!.winRate).toBe(0.5);
+  });
+
+  it("reports zeros for a user the subgraph has never seen", async () => {
+    const subgraph = stubSubgraph({positions: {positions: []}});
+    const entries = await leaderboard(db.pool, "all", 25, subgraph);
+
+    expect(entries.length).toBeGreaterThan(0);
+    for (const entry of entries) {
+      expect(entry.realizedPnlUsd).toBe("0");
+      expect(entry.winRate).toBe(0);
+      expect(entry.closedPositions).toBe(0);
+    }
+  });
+
+  /// Everyone who has traded nothing ties at zero. Copies break the tie so the tail of the board is
+  /// in some meaningful order rather than an arbitrary one.
+  it("breaks a tie at zero on copies received", async () => {
+    const subgraph = stubSubgraph({positions: {positions: []}});
+    const entries = await leaderboard(db.pool, "all", 25, subgraph);
+
+    for (let i = 1; i < entries.length; i++) {
+      expect(entries[i - 1]!.copiesReceived).toBeGreaterThanOrEqual(entries[i]!.copiesReceived);
+    }
+  });
+
+  it("honours the limit", async () => {
+    const subgraph = stubSubgraph({positions: {positions: []}});
+    expect(await leaderboard(db.pool, "all", 1, subgraph)).toHaveLength(1);
   });
 
   it("accepts every window", async () => {
+    const subgraph = stubSubgraph({positions: {positions: []}});
     for (const window of ["7d", "30d", "all"] as const) {
-      expect(Array.isArray(await leaderboard(db.pool, window))).toBe(true);
+      expect(Array.isArray(await leaderboard(db.pool, window, 25, subgraph))).toBe(true);
     }
+  });
+
+  /// A windowed board must ask for a cutoff; `all` must not. Passing a cutoff for `all` would hide
+  /// every position closed before it.
+  it("sends a cutoff for a window and none for all time", async () => {
+    const asked: unknown[] = [];
+    const recording = {
+      url: "https://stub.invalid",
+      async query<T>(_document: string, variables: Record<string, unknown> = {}): Promise<T> {
+        asked.push(variables.since);
+        return {positions: []} as T;
+      },
+    };
+
+    await leaderboard(db.pool, "all", 25, recording);
+    await leaderboard(db.pool, "7d", 25, recording);
+
+    expect(asked[0]).toBe("0");
+    expect(Number(asked[1])).toBeGreaterThan(Math.floor(Date.now() / 1000) - 8 * 24 * 60 * 60);
+  });
+
+  /// The opposite choice from a profile, and deliberate. A ranking assembled from missing data is
+  /// not a partial answer; it is a wrong order presented as a right one.
+  it("fails rather than ranking on missing data", async () => {
+    await expect(leaderboard(db.pool, "all", 25, brokenSubgraph())).rejects.toThrow(
+      /connection refused/,
+    );
   });
 });
