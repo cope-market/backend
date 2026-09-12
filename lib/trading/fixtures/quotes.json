@@ -1,0 +1,362 @@
+[
+  {
+    "price": "1160000000000000000",
+    "conf": "0",
+    "collateral": "1000000",
+    "openFeeBps": 0,
+    "isLong": true,
+    "expectedNetCollateral": "1000000",
+    "expectedEntryPrice": "1160000000000000000",
+    "expectedUnits": "862068965517241379"
+  },
+  {
+    "price": "1160000000000000000",
+    "conf": "0",
+    "collateral": "1000000",
+    "openFeeBps": 0,
+    "isLong": false,
+    "expectedNetCollateral": "1000000",
+    "expectedEntryPrice": "1160000000000000000",
+    "expectedUnits": "862068965517241379"
+  },
+  {
+    "price": "365275000000000000000",
+    "conf": "400000000000000",
+    "collateral": "2000000",
+    "openFeeBps": 0,
+    "isLong": true,
+    "expectedNetCollateral": "2000000",
+    "expectedEntryPrice": "365275400000000000000",
+    "expectedUnits": "5475320812734720"
+  },
+  {
+    "price": "365275000000000000000",
+    "conf": "400000000000000",
+    "collateral": "2000000",
+    "openFeeBps": 0,
+    "isLong": false,
+    "expectedNetCollateral": "2000000",
+    "expectedEntryPrice": "365274600000000000000",
+    "expectedUnits": "5475332804416184"
+  },
+  {
+    "price": "4349021000000000000000",
+    "conf": "17598000000000000000",
+    "collateral": "1000000000",
+    "openFeeBps": 0,
+    "isLong": true,
+    "expectedNetCollateral": "1000000000",
+    "expectedEntryPrice": "4366619000000000000000",
+    "expectedUnits": "229010133469395887"
+  },
+  {
+    "price": "4349021000000000000000",
+    "conf": "17598000000000000000",
+    "collateral": "1000000000",
+    "openFeeBps": 0,
+    "isLong": false,
+    "expectedNetCollateral": "1000000000",
+    "expectedEntryPrice": "4331423000000000000000",
+    "expectedUnits": "230871009365744236"
+  },
+  {
+    "price": "77337890000000000000000",
+    "conf": "1500000000000000000",
+    "collateral": "25000000000",
+    "openFeeBps": 0,
+    "isLong": true,
+    "expectedNetCollateral": "25000000000",
+    "expectedEntryPrice": "77339390000000000000000",
+    "expectedUnits": "323250545420645288"
+  },
+  {
+    "price": "77337890000000000000000",
+    "conf": "1500000000000000000",
+    "collateral": "25000000000",
+    "openFeeBps": 0,
+    "isLong": false,
+    "expectedNetCollateral": "25000000000",
+    "expectedEntryPrice": "77336390000000000000000",
+    "expectedUnits": "323263084816863057"
+  },
+  {
+    "price": "1000000000000000000",
+    "conf": "10000000000000000",
+    "collateral": "1",
+    "openFeeBps": 0,
+    "isLong": true,
+    "expectedNetCollateral": "1",
+    "expectedEntryPrice": "1010000000000000000",
+    "expectedUnits": "990099009900"
+  },
+  {
+    "price": "1000000000000000000",
+    "conf": "10000000000000000",
+    "collateral": "1",
+    "openFeeBps": 0,
+    "isLong": false,
+    "expectedNetCollateral": "1",
+    "expectedEntryPrice": "990000000000000000",
+    "expectedUnits": "1010101010101"
+  },
+  {
+    "price": "99999999999000000000000",
+    "conf": "12340000000000000000",
+    "collateral": "7777777",
+    "openFeeBps": 0,
+    "isLong": true,
+    "expectedNetCollateral": "7777777",
+    "expectedEntryPrice": "100012339999000000000000",
+    "expectedUnits": "77768173408179"
+  },
+  {
+    "price": "99999999999000000000000",
+    "conf": "12340000000000000000",
+    "collateral": "7777777",
+    "openFeeBps": 0,
+    "isLong": false,
+    "expectedNetCollateral": "7777777",
+    "expectedEntryPrice": "99987659999000000000000",
+    "expectedUnits": "77787368962107"
+  },
+  {
+    "price": "1160000000000000000",
+    "conf": "0",
+    "collateral": "1000000",
+    "openFeeBps": 10,
+    "isLong": true,
+    "expectedNetCollateral": "999000",
+    "expectedEntryPrice": "1160000000000000000",
+    "expectedUnits": "861206896551724137"
+  },
+  {
+    "price": "1160000000000000000",
+    "conf": "0",
+    "collateral": "1000000",
+    "openFeeBps": 10,
+    "isLong": false,
+    "expectedNetCollateral": "999000",
+    "expectedEntryPrice": "1160000000000000000",
+    "expectedUnits": "861206896551724137"
+  },
+  {
+    "price": "365275000000000000000",
+    "conf": "400000000000000",
+    "collateral": "2000000",
+    "openFeeBps": 10,
+    "isLong": true,
+    "expectedNetCollateral": "1998000",
+    "expectedEntryPrice": "365275400000000000000",
+    "expectedUnits": "5469845491921985"
+  },
+  {
+    "price": "365275000000000000000",
+    "conf": "400000000000000",
+    "collateral": "2000000",
+    "openFeeBps": 10,
+    "isLong": false,
+    "expectedNetCollateral": "1998000",
+    "expectedEntryPrice": "365274600000000000000",
+    "expectedUnits": "5469857471611768"
+  },
+  {
+    "price": "4349021000000000000000",
+    "conf": "17598000000000000000",
+    "collateral": "1000000000",
+    "openFeeBps": 10,
+    "isLong": true,
+    "expectedNetCollateral": "999000000",
+    "expectedEntryPrice": "4366619000000000000000",
+    "expectedUnits": "228781123335926491"
+  },
+  {
+    "price": "4349021000000000000000",
+    "conf": "17598000000000000000",
+    "collateral": "1000000000",
+    "openFeeBps": 10,
+    "isLong": false,
+    "expectedNetCollateral": "999000000",
+    "expectedEntryPrice": "4331423000000000000000",
+    "expectedUnits": "230640138356378492"
+  },
+  {
+    "price": "77337890000000000000000",
+    "conf": "1500000000000000000",
+    "collateral": "25000000000",
+    "openFeeBps": 10,
+    "isLong": true,
+    "expectedNetCollateral": "24975000000",
+    "expectedEntryPrice": "77339390000000000000000",
+    "expectedUnits": "322927294875224642"
+  },
+  {
+    "price": "77337890000000000000000",
+    "conf": "1500000000000000000",
+    "collateral": "25000000000",
+    "openFeeBps": 10,
+    "isLong": false,
+    "expectedNetCollateral": "24975000000",
+    "expectedEntryPrice": "77336390000000000000000",
+    "expectedUnits": "322939821732046194"
+  },
+  {
+    "price": "1000000000000000000",
+    "conf": "10000000000000000",
+    "collateral": "1",
+    "openFeeBps": 10,
+    "isLong": true,
+    "expectedNetCollateral": "1",
+    "expectedEntryPrice": "1010000000000000000",
+    "expectedUnits": "990099009900"
+  },
+  {
+    "price": "1000000000000000000",
+    "conf": "10000000000000000",
+    "collateral": "1",
+    "openFeeBps": 10,
+    "isLong": false,
+    "expectedNetCollateral": "1",
+    "expectedEntryPrice": "990000000000000000",
+    "expectedUnits": "1010101010101"
+  },
+  {
+    "price": "99999999999000000000000",
+    "conf": "12340000000000000000",
+    "collateral": "7777777",
+    "openFeeBps": 10,
+    "isLong": true,
+    "expectedNetCollateral": "7770000",
+    "expectedEntryPrice": "100012339999000000000000",
+    "expectedUnits": "77690413003812"
+  },
+  {
+    "price": "99999999999000000000000",
+    "conf": "12340000000000000000",
+    "collateral": "7777777",
+    "openFeeBps": 10,
+    "isLong": false,
+    "expectedNetCollateral": "7770000",
+    "expectedEntryPrice": "99987659999000000000000",
+    "expectedUnits": "77709589364104"
+  },
+  {
+    "price": "1160000000000000000",
+    "conf": "0",
+    "collateral": "1000000",
+    "openFeeBps": 500,
+    "isLong": true,
+    "expectedNetCollateral": "950000",
+    "expectedEntryPrice": "1160000000000000000",
+    "expectedUnits": "818965517241379310"
+  },
+  {
+    "price": "1160000000000000000",
+    "conf": "0",
+    "collateral": "1000000",
+    "openFeeBps": 500,
+    "isLong": false,
+    "expectedNetCollateral": "950000",
+    "expectedEntryPrice": "1160000000000000000",
+    "expectedUnits": "818965517241379310"
+  },
+  {
+    "price": "365275000000000000000",
+    "conf": "400000000000000",
+    "collateral": "2000000",
+    "openFeeBps": 500,
+    "isLong": true,
+    "expectedNetCollateral": "1900000",
+    "expectedEntryPrice": "365275400000000000000",
+    "expectedUnits": "5201554772097984"
+  },
+  {
+    "price": "365275000000000000000",
+    "conf": "400000000000000",
+    "collateral": "2000000",
+    "openFeeBps": 500,
+    "isLong": false,
+    "expectedNetCollateral": "1900000",
+    "expectedEntryPrice": "365274600000000000000",
+    "expectedUnits": "5201566164195375"
+  },
+  {
+    "price": "4349021000000000000000",
+    "conf": "17598000000000000000",
+    "collateral": "1000000000",
+    "openFeeBps": 500,
+    "isLong": true,
+    "expectedNetCollateral": "950000000",
+    "expectedEntryPrice": "4366619000000000000000",
+    "expectedUnits": "217559626795926092"
+  },
+  {
+    "price": "4349021000000000000000",
+    "conf": "17598000000000000000",
+    "collateral": "1000000000",
+    "openFeeBps": 500,
+    "isLong": false,
+    "expectedNetCollateral": "950000000",
+    "expectedEntryPrice": "4331423000000000000000",
+    "expectedUnits": "219327458897457025"
+  },
+  {
+    "price": "77337890000000000000000",
+    "conf": "1500000000000000000",
+    "collateral": "25000000000",
+    "openFeeBps": 500,
+    "isLong": true,
+    "expectedNetCollateral": "23750000000",
+    "expectedEntryPrice": "77339390000000000000000",
+    "expectedUnits": "307088018149613023"
+  },
+  {
+    "price": "77337890000000000000000",
+    "conf": "1500000000000000000",
+    "collateral": "25000000000",
+    "openFeeBps": 500,
+    "isLong": false,
+    "expectedNetCollateral": "23750000000",
+    "expectedEntryPrice": "77336390000000000000000",
+    "expectedUnits": "307099930576019904"
+  },
+  {
+    "price": "1000000000000000000",
+    "conf": "10000000000000000",
+    "collateral": "1",
+    "openFeeBps": 500,
+    "isLong": true,
+    "expectedNetCollateral": "1",
+    "expectedEntryPrice": "1010000000000000000",
+    "expectedUnits": "990099009900"
+  },
+  {
+    "price": "1000000000000000000",
+    "conf": "10000000000000000",
+    "collateral": "1",
+    "openFeeBps": 500,
+    "isLong": false,
+    "expectedNetCollateral": "1",
+    "expectedEntryPrice": "990000000000000000",
+    "expectedUnits": "1010101010101"
+  },
+  {
+    "price": "99999999999000000000000",
+    "conf": "12340000000000000000",
+    "collateral": "7777777",
+    "openFeeBps": 500,
+    "isLong": true,
+    "expectedNetCollateral": "7388889",
+    "expectedEntryPrice": "100012339999000000000000",
+    "expectedUnits": "73879773236721"
+  },
+  {
+    "price": "99999999999000000000000",
+    "conf": "12340000000000000000",
+    "collateral": "7777777",
+    "openFeeBps": 500,
+    "isLong": false,
+    "expectedNetCollateral": "7388889",
+    "expectedEntryPrice": "99987659999000000000000",
+    "expectedUnits": "73898009015051"
+  }
+]
