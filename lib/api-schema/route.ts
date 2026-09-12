@@ -11,6 +11,7 @@ export interface RouteDefinition<
   TQuery extends ZodObject | undefined = ZodObject | undefined,
   TBody extends ZodType | undefined = ZodType | undefined,
   TResponse extends ZodType = ZodType,
+  TAuth extends AuthMode = AuthMode,
 > {
   readonly method: HttpMethod;
   /// Path relative to /api/v1, with placeholders in braces: "theses/{thesisId}/comments".
@@ -18,7 +19,7 @@ export interface RouteDefinition<
   /// Stable identifier. Swift code generation names its methods after this.
   readonly operationId: string;
   readonly summary: string;
-  readonly auth: AuthMode;
+  readonly auth: TAuth;
   readonly params?: TParams;
   readonly query?: TQuery;
   readonly body?: TBody;
@@ -39,12 +40,13 @@ export function pathPlaceholders(path: string): string[] {
 /// params argument for a route that has none.
 export function defineRoute<
   TResponse extends ZodType,
+  TAuth extends AuthMode,
   TParams extends ZodObject | undefined = undefined,
   TQuery extends ZodObject | undefined = undefined,
   TBody extends ZodType | undefined = undefined,
 >(
-  definition: RouteDefinition<TParams, TQuery, TBody, TResponse>,
-): RouteDefinition<TParams, TQuery, TBody, TResponse> {
+  definition: RouteDefinition<TParams, TQuery, TBody, TResponse, TAuth>,
+): RouteDefinition<TParams, TQuery, TBody, TResponse, TAuth> {
   const {method, path, operationId, params, body} = definition;
 
   const placeholders = pathPlaceholders(path);
