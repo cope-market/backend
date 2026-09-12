@@ -1,0 +1,23 @@
+# Local Postgres. The same image and settings are what runs on the VPS, so "works locally" means
+# something.
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: cope-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cope
+      POSTGRES_PASSWORD: cope
+      POSTGRES_DB: cope
+    ports:
+      - "5432:5432"
+    volumes:
+      - cope-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cope -d cope"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  cope-pgdata:
