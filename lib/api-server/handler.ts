@@ -1,4 +1,5 @@
 import type {ZodObject, ZodType, z} from "zod";
+import {needsToken} from "../api-schema/route";
 import type {RouteDefinition} from "../api-schema/route";
 import type {ErrorCode} from "../api-schema/primitives";
 import {AuthError, bearerToken, privyAppId, verifyPrivyToken} from "../auth/privy";
@@ -49,7 +50,7 @@ export interface HandlerContext<R extends RouteDefinition> {
   params: Infer<R["params"], Record<string, never>>;
   query: Infer<R["query"], Record<string, never>>;
   body: Infer<R["body"], Record<string, never>>;
-  /// Non-null on routes declaring `auth: "required"`. Null only on a public route with no
+  /// Non-null on routes declaring `auth: "required"`. Null on a public route with no
   /// recognisable token.
   user: R["auth"] extends "required" ? User : User | null;
   request: Request;
@@ -138,7 +139,7 @@ export function defineHandler<R extends RouteDefinition>(
         } catch (cause) {
           // A bad token on a public route is not an error: the caller is simply anonymous. On an
           // authenticated route the check below turns it into a 401.
-          if (route.auth === "required") {
+          if (needsToken(route.auth)) {
             const message =
               cause instanceof AuthError ? cause.message : "Access token is not valid.";
             return errorResponse("UNAUTHORIZED", message);
@@ -146,12 +147,17 @@ export function defineHandler<R extends RouteDefinition>(
         }
       }
 
+      if (needsToken(route.auth) && !token) {
+        return errorResponse("UNAUTHORIZED", `${route.operationId} requires a bearer token.`);
+      }
+
+      // Only `required` demands an account. A `token` route is the one that creates it, and
+      // insisting on a user row there tells a first-time caller to create a session using the
+      // endpoint that creates sessions.
       if (route.auth === "required" && !user) {
         return errorResponse(
           "UNAUTHORIZED",
-          token
-            ? "No account exists for this token. Create a session first."
-            : `${route.operationId} requires a bearer token.`,
+          "No account exists for this token. Create a session first.",
         );
       }
 

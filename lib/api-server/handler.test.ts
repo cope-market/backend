@@ -254,3 +254,69 @@ describe("errors", () => {
     expect(response.status).toBe(500);
   });
 });
+
+describe("bootstrapping an account", () => {
+  /// The deadlock this mode exists to break. `createSession` creates the account, so demanding one
+  /// already exists made it answer a first-time caller with "create a session first" — from the
+  /// endpoint that creates sessions. Every test and verification script had created users directly
+  /// in the database, so the real first-login path was never exercised until someone signed in
+  /// with X.
+  it("lets a verified token through when no account exists yet", async () => {
+    const route = defineRoute({
+      method: "POST",
+      path: "auth/session",
+      operationId: "testCreateSession",
+      summary: "Bootstraps the account.",
+      auth: "token",
+      body: z.object({}),
+      response: z.object({ok: z.boolean()}),
+    });
+
+    const handler = defineHandler(route, async () => ({ok: true}), {
+      verifyToken: async () => ({privyId: "did:privy:brand-new"}) as never,
+      // No account exists for this token, which is the whole point.
+      loadUser: async () => null,
+    });
+
+    const response = await handler(
+      new Request("http://test/api/v1/auth/session", {
+        method: "POST",
+        headers: {authorization: "Bearer good", "content-type": "application/json"},
+        body: "{}",
+      }),
+      {params: Promise.resolve({})},
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ok: true});
+  });
+
+  /// It still needs a token. `token` is weaker than `required`, not open.
+  it("still refuses an anonymous caller", async () => {
+    const route = defineRoute({
+      method: "POST",
+      path: "auth/session",
+      operationId: "testCreateSessionAnon",
+      summary: "Bootstraps the account.",
+      auth: "token",
+      body: z.object({}),
+      response: z.object({ok: z.boolean()}),
+    });
+
+    const handler = defineHandler(route, async () => ({ok: true}), {
+      verifyToken: async () => ({privyId: "did:privy:brand-new"}) as never,
+      loadUser: async () => null,
+    });
+
+    const response = await handler(
+      new Request("http://test/api/v1/auth/session", {
+        method: "POST",
+        headers: {"content-type": "application/json"},
+        body: "{}",
+      }),
+      {params: Promise.resolve({})},
+    );
+
+    expect(response.status).toBe(401);
+  });
+});

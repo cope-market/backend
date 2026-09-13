@@ -1,5 +1,6 @@
 import {describe, expect, it} from "vitest";
 import {buildOpenApiDocument} from "./openapi";
+import {needsToken} from "./route";
 import {routeList} from "./routes";
 
 const doc = buildOpenApiDocument();
@@ -84,7 +85,7 @@ describe("security", () => {
     for (const route of routeList) {
       const op = doc.paths[`/${route.path}`]![route.method.toLowerCase()]!;
       const has401 = "401" in op.responses;
-      expect(has401, route.operationId).toBe(route.auth === "required");
+      expect(has401, route.operationId).toBe(needsToken(route.auth));
     }
   });
 });

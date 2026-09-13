@@ -2,6 +2,7 @@ import {z} from "zod";
 import type {ZodObject, ZodType} from "zod";
 import {ApiError} from "./primitives";
 import {routeList} from "./routes";
+import {needsToken} from "./route";
 import type {RouteDefinition} from "./route";
 import {pathPlaceholders} from "./route";
 
@@ -140,7 +141,7 @@ export function buildOpenApiDocument(): OpenApiDocument {
       "400": errorResponse("The request failed validation, or a rule rejected it."),
       "500": errorResponse("Unexpected server error."),
     };
-    if (route.auth === "required") {
+    if (needsToken(route.auth)) {
       responses["401"] = errorResponse("Missing or invalid access token.");
     }
 
@@ -148,7 +149,7 @@ export function buildOpenApiDocument(): OpenApiDocument {
       operationId: route.operationId,
       summary: route.summary,
       tags: [tagFor(route.path)],
-      security: route.auth === "required" ? [{bearerAuth: []}] : [],
+      security: needsToken(route.auth) ? [{bearerAuth: []}] : [],
       responses,
     };
 

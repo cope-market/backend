@@ -4,7 +4,22 @@ export type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
 
 /// Whether a caller must present a Privy access token. Declared per route and never inferred from
 /// the path, so adding a route under an authenticated prefix cannot silently make it public.
-export type AuthMode = "required" | "none";
+/// How a route authenticates.
+///
+/// `token` exists because account creation is a bootstrap problem. `required` means a verified
+/// token AND an account row, which is what nearly every route wants — but the route that creates
+/// the account cannot demand one, or a first-time user is told to create a session by the very
+/// endpoint that creates sessions. `token` means the token must verify and the account may not
+/// exist yet.
+///
+/// To a client and to the OpenAPI document, `token` and `required` are the same: a bearer token is
+/// needed and a 401 is possible. The difference is only what the server checks.
+export type AuthMode = "required" | "token" | "none";
+
+/// True when the route needs a bearer token from the caller, whether or not an account exists.
+export function needsToken(auth: AuthMode): boolean {
+  return auth === "required" || auth === "token";
+}
 
 export interface RouteDefinition<
   TParams extends ZodObject | undefined = ZodObject | undefined,

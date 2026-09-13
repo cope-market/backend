@@ -1,4 +1,5 @@
 import {describe, expect, it} from "vitest";
+import {needsToken} from "./route";
 import {routeList, routes} from "./routes";
 import {pathPlaceholders} from "./route";
 
@@ -43,7 +44,7 @@ describe("route registry", () => {
 
   it("declares auth explicitly on every route", () => {
     for (const route of routeList) {
-      expect(["required", "none"], route.operationId).toContain(route.auth);
+      expect(["required", "token", "none"], route.operationId).toContain(route.auth);
     }
   });
 
@@ -89,7 +90,16 @@ describe("write routes are authenticated", () => {
   it("requires auth for every POST, PATCH and DELETE", () => {
     for (const route of routeList) {
       if (route.method === "GET") continue;
-      expect(route.auth, route.operationId).toBe("required");
+      expect(needsToken(route.auth), route.operationId).toBe(true);
     }
+  });
+
+  /// `token` is weaker than `required`: it accepts a verified token with no account behind it. That
+  /// is necessary exactly once, to break the bootstrap deadlock in account creation. Anywhere else
+  /// it would be a route that a caller with no account could reach, which is not a thing we want to
+  /// add by accident.
+  it("uses the weaker token mode only for account creation", () => {
+    const bootstrapping = routeList.filter((route) => route.auth === "token");
+    expect(bootstrapping.map((route) => route.operationId)).toEqual(["createSession"]);
   });
 });

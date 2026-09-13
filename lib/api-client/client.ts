@@ -1,5 +1,6 @@
 import type {z} from "zod";
 import {buildPath} from "../api-schema/route";
+import {needsToken} from "../api-schema/route";
 import type {RouteDefinition} from "../api-schema/route";
 import {ApiError} from "../api-schema/primitives";
 import {routes} from "../api-schema/routes";
@@ -124,7 +125,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     const token = (await options.getAccessToken?.()) ?? null;
     if (token) headers["authorization"] = `Bearer ${token}`;
 
-    if (route.auth === "required" && !token) {
+    if (needsToken(route.auth) && !token) {
       throw new ApiRequestError(
         "UNAUTHORIZED",
         `${route.operationId} needs authentication and no access token is available.`,

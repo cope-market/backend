@@ -57,7 +57,10 @@ export const routes = {
     path: "auth/session",
     operationId: "createSession",
     summary: "Verify a Privy access token, create the user on first sight, return the profile.",
-    auth: "required",
+    // `token`, not `required`: this is what creates the account, so it cannot demand one already
+    // exists. `required` here told a first-time caller to create a session using the endpoint that
+    // creates sessions.
+    auth: "token",
     body: z.object({}).describe("Empty. The token is the bearer credential."),
     response: z.object({profile: Profile}),
   }),
