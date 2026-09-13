@@ -51,6 +51,20 @@ export interface ApiClientOptions {
   fetch?: typeof fetch;
 }
 
+/// True for an ngrok dev tunnel. Matched on the host rather than anywhere in the string, so an
+/// API path that happened to contain the word cannot switch this on.
+function isTunnelledHost(baseUrl: string): boolean {
+  let host: string;
+  try {
+    host = new URL(baseUrl).hostname;
+  } catch {
+    return false;
+  }
+  return [".ngrok-free.dev", ".ngrok-free.app", ".ngrok.io", ".ngrok.app"].some((suffix) =>
+    host.endsWith(suffix),
+  );
+}
+
 function queryString(query: Record<string, unknown> | undefined): string {
   if (!query) return "";
   const search = new URLSearchParams();
@@ -90,8 +104,17 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
   const doFetch = options.fetch ?? globalThis.fetch;
   const base = options.baseUrl.replace(/\/$/, "");
 
+  const tunnelled = isTunnelledHost(base);
+
   const call = async (route: RouteDefinition, input: Record<string, unknown>) => {
     const headers: Record<string, string> = {};
+
+    // ngrok's free tier answers browser-looking requests with an HTML interstitial instead of
+    // proxying them, so every call returns a warning page as text/plain and the client fails to
+    // parse JSON it never received. The documented opt-out is this header. Keyed on the hostname,
+    // so it is present only while a teammate is pointed at a dev tunnel and can never reach
+    // production.
+    if (tunnelled) headers["ngrok-skip-browser-warning"] = "1";
 
     // The token is sent whenever one is available, not only on routes that demand it. A route's
     // auth mode says whether the SERVER requires a caller to be signed in, not whether the client

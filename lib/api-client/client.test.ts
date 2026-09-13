@@ -163,3 +163,53 @@ describe("types", () => {
     expectTypeOf(client.getUser).parameter(0).toHaveProperty("params");
   });
 });
+
+describe("dev tunnels", () => {
+  /// ngrok's free tier answers browser-looking requests with an HTML interstitial rather than
+  /// proxying them. Without this header every call returns a warning page as text/plain and the
+  /// client fails parsing JSON it never received — which is how a teammate loses an afternoon.
+  it("skips ngrok's browser interstitial when pointed at a tunnel", async () => {
+    let seen: Record<string, string> = {};
+    const client = createApiClient({
+      baseUrl: "https://duty-concierge-semester.ngrok-free.dev/api/v1",
+      fetch: (async (_url: string, init: {headers: Record<string, string>}) => {
+        seen = init.headers;
+        return Response.json({assets: []});
+      }) as unknown as typeof fetch,
+    });
+
+    await client.listAssets({});
+    expect(seen["ngrok-skip-browser-warning"]).toBe("1");
+  });
+
+  /// The header is meaningless anywhere else, and a production client should not be sending
+  /// vendor-specific headers to its own API.
+  it("sends nothing extra against a normal host", async () => {
+    let seen: Record<string, string> = {};
+    const client = createApiClient({
+      baseUrl: "https://api.cope.market/api/v1",
+      fetch: (async (_url: string, init: {headers: Record<string, string>}) => {
+        seen = init.headers;
+        return Response.json({assets: []});
+      }) as unknown as typeof fetch,
+    });
+
+    await client.listAssets({});
+    expect(seen["ngrok-skip-browser-warning"]).toBeUndefined();
+  });
+
+  /// Matched on the hostname. A path containing the word must not switch it on.
+  it("does not match on the path", async () => {
+    let seen: Record<string, string> = {};
+    const client = createApiClient({
+      baseUrl: "https://api.cope.market/ngrok.io/v1",
+      fetch: (async (_url: string, init: {headers: Record<string, string>}) => {
+        seen = init.headers;
+        return Response.json({assets: []});
+      }) as unknown as typeof fetch,
+    });
+
+    await client.listAssets({});
+    expect(seen["ngrok-skip-browser-warning"]).toBeUndefined();
+  });
+});
