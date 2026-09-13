@@ -48,6 +48,15 @@ describe("building the headers", () => {
     );
   });
 
+  /// The client sends this against a tunnel host. A preflight rejects any header it was not told
+  /// to expect, so leaving it out made the client's tunnel support and the server's CORS cancel
+  /// each other out — every call failed, and only a real browser showed it.
+  it("allows the header the client sends against a tunnel", () => {
+    expect(corsHeaders(LOCAL, [LOCAL])?.["access-control-allow-headers"]).toContain(
+      "ngrok-skip-browser-warning",
+    );
+  });
+
   it("refuses an origin that is not on the list", () => {
     expect(corsHeaders("https://evil.example", [LOCAL])).toBeNull();
   });

@@ -41,7 +41,12 @@ export function corsHeaders(origin: string | null, allowed: string[]): CorsHeade
     // cache can serve one origin's allow header to another origin.
     vary: "Origin",
     "access-control-allow-methods": "GET,POST,PATCH,DELETE,OPTIONS",
-    "access-control-allow-headers": "authorization,content-type",
+    // `ngrok-skip-browser-warning` is here because the typed client sends it against a tunnel
+    // host, and a preflight rejects any header it was not told to expect. Omitting it made the two
+    // halves of tunnel support cancel each other out: the client asked for the header, the
+    // preflight refused it, and every call failed with net::ERR_FAILED. curl never saw it, because
+    // curl does not enforce CORS.
+    "access-control-allow-headers": "authorization,content-type,ngrok-skip-browser-warning",
     "access-control-max-age": "86400",
   };
 }
